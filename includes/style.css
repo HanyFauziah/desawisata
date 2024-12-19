@@ -1,0 +1,67 @@
+.custom-card {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+    background-color: #ffffff;
+}
+
+.custom-card-header {
+    background: linear-gradient(135deg, #6c63ff, #9b89ff);
+    color: #fff;
+    padding: 20px;
+    text-align: center;
+}
+
+.custom-card-header h5 {
+    margin: 0;
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+.custom-card-body {
+    padding: 20px;
+}
+
+.custom-card-body h5 {
+    font-size: 1.25rem;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.custom-table {
+    margin-top: 20px;
+}
+
+.custom-table tbody tr:nth-child(even) {
+    background-color: #f8f9fa;
+}
+
+.custom-table .name {
+    font-weight: bold;
+    color: #6c63ff;
+}
+
+.custom-table .amount {
+    text-align: right;
+    color: #6c757d;
+}
+
+.btn-back {
+    background-color: #6c63ff;
+    border: none;
+}
+
+.btn-back:hover {
+    background-color: #5754d8;
+}
+
+.qr-code {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-top: 20px;
+}
+
+.qr-code img {
+    max-width: 150px;
+}
