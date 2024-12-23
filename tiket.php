@@ -15,8 +15,7 @@ include 'includes/db.php';
                     <!-- Background Image -->
                     <div class="w-100 h-100" style="background-image: url('https://i.imgur.com/iqYcAv9.jpeg'); background-size: cover; background-position: center;"></div>
 
-                    <!-- Gradient Overlay -->
-                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded" style="background: linear-gradient(to bottom, rgba(204, 153, 255, 0.3), rgba(34, 52, 92, 0.7));"></div>
+                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded" style="background: linear-gradient(to bottom, rgba(0, 150, 136, 0.3), rgba(0, 77, 64, 0.4));">
 
                     
 
@@ -37,7 +36,7 @@ include 'includes/db.php';
                     <div class="w-100 h-100" style="background-image: url('        https://desaawisatasindangkasih.wordpress.com/wp-content/uploads/2024/08/whatsapp-image-2024-07-31-at-12.27.34.jpeg'); background-size: cover; background-position: center;"></div>
 
                     <!-- Gradient Overlay -->
-                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded" style="background: linear-gradient(to bottom, rgba(204, 153, 255, 0.3), rgba(34, 52, 92, 0.7));"></div>
+                    <div class="position-absolute top-0 start-0 w-100 h-100 rounded" style="background: linear-gradient(to bottom, rgba(0, 150, 136, 0.3), rgba(0, 77, 64, 0.4));">
 
 
                     <!-- Welcome Text -->

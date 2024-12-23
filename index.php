@@ -228,9 +228,7 @@ include 'includes/config.php';
 
                 <!-- Carousel Section -->
 
-            <h2 class="text-center" >Testimoni</h2>
-            <h2 class="text-center" >Tinggalkan Komentar</h2>
-            </div>
+            
         </section>
 
   </main>

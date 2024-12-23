@@ -1,6 +1,6 @@
 <?php
-include "../includes/db.php"; // Ensure session_start() is in db.php
-include "../includes/header.php";
+include "../../includes/db.php"; // Ensure session_start() is in db.php
+include "../../includes/header.php";
 $order_id = isset($_GET['order_id']) ? $_GET['order_id'] : '';
 $status_code = isset($_GET['status_code']) ? $_GET['status_code'] : '';
 $transaction_status = isset($_GET['transaction_status']) ? $_GET['transaction_status'] : '';
@@ -26,13 +26,11 @@ use Endroid\QrCode\Label\Font\OpenSans;
 // Initialize QR code variable
 $qrCodeImage = null;
 
-
-
 // Automatically generate the QR code using $order_id (no POST required)
 if ($order_id) {
     // Create a QR Code
     $qrCode = new QrCode(
-        data: "https://desawisatasindangkasih.my.id/tiket/tiket_kamu.php?order_id=$order_id",
+        data: "http://localhost:8888/desa-wisata/dashboard/tiket/generate-tiket-pdf.php?order_id=$order_id",
         encoding: new Encoding('UTF-8'),
         errorCorrectionLevel: ErrorCorrectionLevel::Low,
         size: 300,
@@ -44,41 +42,25 @@ if ($order_id) {
     
     // Create a writer instance to render the QR code as an image
     $writer = new PngWriter();
-
-    $font = new OpenSans(24);
-    
-    // Add a bold label with a blue or green color
-    $label = new Label(
-        text: $order_id, // Label text
-        textColor: new Color(0, 128, 0),
-        font: $font,
-    );
     
     // Write the QR code with the label
-    $result = $writer->write(
-        qrCode: $qrCode,
-        logo: null, // Optional: Add a logo image here if desired
-        label: $label
-    );
-    
-    // Get the QR code image as a string to display it
+    $result = $writer->write(qrCode: $qrCode);
     $qrCodeImage = $result->getString(); // Store the QR code image string to display it
 }
 
-// Check if transaction is successful (settlement)
+// Check transaction status
 if ($transaction_status === 'settlement') {
-    // Query the database for order details from pemesanan_tiket_satuan table
+    // Query the database for order details
     $query = "SELECT id, tgl_wisata, total_harga, id_pengunjung
               FROM pemesanan_tiket_satuan
               WHERE id = '$order_id'";
 
     $result = mysqli_query($conn, $query);
 
-    // Check if the query returned a valid result
     if ($result && mysqli_num_rows($result) > 0) {
         $order = mysqli_fetch_assoc($result);
         
-        // Fetch visitor details using id_pengunjung
+        // Fetch visitor details
         $id_pengunjung = $order['id_pengunjung'];
         $visitor_query = "SELECT nama, email FROM pengunjung WHERE id = '$id_pengunjung'";
         $visitor_result = mysqli_query($conn, $visitor_query);
@@ -90,14 +72,12 @@ if ($transaction_status === 'settlement') {
         }
 
         // Fetch ticket details from detail_pemesanan_tiket_satuan table
-        // Join with tipe_tiket_satuan to get the nama_tiket
         $ticket_query = "SELECT d.id_tiket_satuan, d.jumlah_tiket, t.nama_tiket
                          FROM detail_pemesanan_tiket_satuan d
                          JOIN tipe_tiket_satuan t ON d.id_tiket_satuan = t.id
                          WHERE d.id_pemesanan_satuan = '$order_id'";
 
         $ticket_result = mysqli_query($conn, $ticket_query);
-
         if ($ticket_result && mysqli_num_rows($ticket_result) > 0) {
             while ($ticket = mysqli_fetch_assoc($ticket_result)) {
                 $ticket_details[] = $ticket;
@@ -107,12 +87,11 @@ if ($transaction_status === 'settlement') {
         // Order details found
         $order_details = true;
 
-        // Check if tickets already exist in tiket_satuan_dibeli
+        // Insert tickets into tiket_satuan_dibeli if not already inserted
         foreach ($ticket_details as $ticket) {
             $jumlah_tiket = $ticket['jumlah_tiket'];
             $id_tiket_satuan = $ticket['id_tiket_satuan'];
 
-            // Check if tickets for this order already exist
             $check_ticket_query = "SELECT COUNT(*) as count FROM tiket_satuan_dibeli 
                                    WHERE id_pemesanan_satuan = '$order_id' AND id_tipe_tiket = '$id_tiket_satuan'";
             $check_ticket_result = mysqli_query($conn, $check_ticket_query);
@@ -146,15 +125,33 @@ if ($transaction_status === 'settlement') {
         $order_details = false;
     }
 } else {
-    $order_details = false;
+    if ($transaction_status === 'pending') {
+        $order_details = 'Pembayaran Belum Berhasil';
+    } elseif ($transaction_status === 'cancel') {
+        $order_details = 'Pembayaran Gagal';
+    } else {
+        $order_details = false;
+    }
 }
 ?>
 
 <main>
 <div class="container mt-5">
-    <h1 class="text-center mb-4 text-primary custom-heading">Pemesanan Tiket Berhasil</h1>
+    <h1 class="text-center mb-4 text-primary custom-heading">
+        <?php
+            if ($transaction_status === 'settlement') {
+                echo 'Pemesanan Tiket Berhasil';
+            } elseif ($transaction_status === 'pending') {
+                echo 'Pembayaran Belum Berhasil';
+            } elseif ($transaction_status === 'cancel') {
+                echo 'Pembayaran Gagal, silahkan lakukan pemesanan ulang';
+            } else {
+                echo 'Status Pemesanan Tidak Ditemukan';
+            }
+        ?>
+    </h1>
 
-    <?php if ($order_details): ?>
+    <?php if ($order_details && $transaction_status === 'settlement'): ?>
         <div class="custom-card">
             <div class="custom-card-header">
                 <h5>Nomor Pesanan : <?php echo htmlspecialchars($order['id']); ?></h5>
@@ -162,20 +159,17 @@ if ($transaction_status === 'settlement') {
             </div>
 
             <?php if ($qrCodeImage): ?>
-                    <div class="qr-code">
-                        <div class="d-flex flex-column">
-                            <p>Silahkan tunjukkan kode QR ini ke petugas:</p>
-                            <img id="qr-code-img" src="data:image/png;base64,<?php echo base64_encode($qrCodeImage); ?>" alt="QR Code"/>
-                            <button id="save-qr-btn" class="btn btn-primary mt-3">Download QR</button>
-                        </div>
+                <div class="qr-code">
+                    <div class="d-flex flex-column">
+                        <p>Silahkan tunjukkan kode QR ini ke petugas:</p>
+                        <img id="qr-code-img" src="data:image/png;base64,<?php echo base64_encode($qrCodeImage); ?>" alt="QR Code"/>
+                        <button id="save-qr-btn" class="btn btn-primary mt-3">Download QR</button>
                     </div>
-                <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
             <div class="custom-card-body">
                 <p><strong>Tanggal Berlaku Tiket :</strong> <?php echo htmlspecialchars($order['tgl_wisata']); ?></p>
-
-                <!-- QR Code -->
-
 
                 <!-- Ticket Details -->
                 <h6 class="mt-4">Detail Tiket:</h6>
@@ -197,7 +191,7 @@ if ($transaction_status === 'settlement') {
         </div>
     <?php else: ?>
         <div class="alert alert-danger mt-4" role="alert">
-            <strong>Error!</strong> Order not found or the payment status is not settled.
+            <strong>Error!</strong> <?php echo $order_details; ?>
         </div>
     <?php endif; ?>
 
@@ -209,6 +203,39 @@ if ($transaction_status === 'settlement') {
 </main>
 
 <style>
+    .custom-card {
+        border-radius: 12px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        background-color: #ffffff;
+    }
+
+    .custom-card-header {
+        background: linear-gradient(135deg, #6c63ff, #9b89ff);
+        color: white;
+        padding: 20px;
+    }
+
+    .custom-card-body {
+        padding: 20px;
+    }
+
+    .custom-table td {
+        padding: 8px;
+        font-size: 14px;
+    }
+
+    .qr-code img {
+        max-width: 250px;
+        max-height: 250px;
+    }
+
+    .btn-back {
+        background-color: #007bff;
+        border-radius: 4px;
+    }
+
+
     .custom-card {
         border-radius: 12px;
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
